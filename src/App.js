@@ -1,19 +1,76 @@
 import React, { Suspense } from 'react'
-import { Canvas } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
-import { useLayoutEffect, useRef } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import glsl from 'babel-plugin-glsl/macro'
-import { extend, useFrame, useLoader } from '@react-three/fiber'
+import { Canvas, extend, useFrame, useLoader } from '@react-three/fiber'
+
+import { RenderTexture, OrbitControls, PerspectiveCamera, Text, ContactShadows } from '@react-three/drei'
+import { suspend } from 'suspend-react'
+
+const inter = import('./noto-color-emoji-regular.ttf');
 
 export default function App() {
   return (
+    // <Canvas camera={{ position: [0, -4, 5], fov: 50 }}>
+    //   <Suspense fallback={null}>
+    //     <Fire scale={7} />
+    //   </Suspense>
+    //   <OrbitControls />
+    // </Canvas>
+    //<Canvas camera={{ position: [0, -4, 5], fov: 50 }}>
+    //<Canvas camera={{ position: [5, 5, 5], fov: 25 }}>
+
     <Canvas camera={{ position: [0, -4, 5], fov: 50 }}>
-      <Suspense fallback={null}>
+      <ambientLight intensity={0.5} />
+      <directionalLight position={[10, 10, 5]} />
+      <ContactShadows frames={1} position={[0, -0.5, 0]} blur={1} opacity={0.75} />
+      <ContactShadows frames={1} position={[0, -0.5, 0]} blur={3} color="orange" />      
+      <Suspense fallback={null}>      
         <Fire scale={7} />
       </Suspense>
       <OrbitControls />
-    </Canvas>
+    </Canvas>    
+  )
+}
+
+function Cube() {
+  const textRef = useRef()
+  useFrame((state) => (textRef.current.position.x = Math.sin(state.clock.elapsedTime) * 2))
+  return (
+    <mesh>
+      <boxGeometry />
+      <meshStandardMaterial>
+        <RenderTexture attach="map" anisotropy={16}>
+          <PerspectiveCamera makeDefault manual aspect={1 / 1} position={[0, 0, 5]} />
+          <color attach="background" args={['orange']} />
+          <ambientLight intensity={0.5} />
+          <directionalLight position={[10, 10, 5]} />
+          <Text font={suspend(inter).default} ref={textRef} fontSize={4} color="#555">
+          Fire⚡Clov
+          </Text>
+        </RenderTexture>
+      </meshStandardMaterial>
+    </mesh>
+  )
+}
+
+function Dodecahedron(props) {
+  const meshRef = useRef()
+  const [hovered, hover] = useState(false)
+  const [clicked, click] = useState(false)
+  useFrame(() => (meshRef.current.rotation.x += 0.01))
+  return (
+    <group {...props}>
+      <mesh
+        ref={meshRef}
+        scale={clicked ? 1.5 : 1}
+        onClick={() => click(!clicked)}
+        onPointerOver={() => hover(true)}
+        onPointerOut={() => hover(false)}>
+        <dodecahedronGeometry args={[0.75]} />
+        <meshStandardMaterial color={hovered ? 'hotpink' : '#5de4c7'} />
+      </mesh>
+    </group>
   )
 }
 
